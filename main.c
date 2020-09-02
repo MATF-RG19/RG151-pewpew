@@ -4,7 +4,9 @@
 
 
 static void on_display(void);
+static void on_keyboard(unsigned char key, int x, int y);
 
+float poz=0;
 
 int main(int argc, char** argv){
 
@@ -16,9 +18,10 @@ int main(int argc, char** argv){
     glutCreateWindow(argv[0]);
 
     glutDisplayFunc(on_display);
+    glutKeyboardFunc(on_keyboard);
 
     glMatrixMode(GL_PROJECTION);
-    gluPerspective(60, 1, 0.1, 300);
+    gluPerspective(80, 1.7, 0.5, 300);
 
     glClearColor(0.1, 0.1, 0.1, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -42,19 +45,47 @@ int main(int argc, char** argv){
     return 0;
 }
 
+//poz avioncica se menja
+void on_keyboard(unsigned char key, int x, int y) {
+    switch(key) {
+        case 'a':
+            if(poz>-3){
+            poz -= 0.1;
+            glutPostRedisplay();
+            }
+            break;
+        case 'd':
+            if(poz<3){
+            poz += 0.1;
+            glutPostRedisplay();
+            }
+            break;
+        case 27:
+          exit(0);
+          break;
+    }
+}
+//crtanje aviona
+void draw_avion(){
+    glPushMatrix();
+        GLfloat ambient3[] = {0.22,1,0.08,0};
+        GLfloat diffuse3[] = {0.3,0.3,0.3,0};
+        GLfloat specular3[] = {0.6,0.6,0.6,0};
+        GLfloat shininess3 = 10;
 
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient3);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse3);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular3);
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess3);
 
-static void on_display(void){
+        glTranslatef(0,-0.15,2.35);
+        glRotatef(-90,1,0,0);
+        glutSolidCone(0.15,0.15,3,3);
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(0, 3, 5,
-              0, 0, 0,
-              0, 1, 0);
-
+    glPopMatrix();
+}
+//crtanje podloge
+void draw_arena(){
     glPushMatrix();
         GLfloat ambient3[] = {1,0.35,0.79,0};
         GLfloat diffuse3[] = {0.3,0.3,0.3,0};
@@ -66,13 +97,39 @@ static void on_display(void){
         glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular3);
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess3);
 
-        glBegin(GL_QUADS);
-            glVertex3f(-2.5, 0, -2.5);
-            glVertex3f(2.5, 0, -2.5);
-            glVertex3f(2.5, 0, 2.5);
-            glVertex3f(-2.5, 0, 2.5);
+        glBegin(GL_LINES);
+        for(int i=-50;i<=50;i++)
+        {
+            glVertex3f((float)i,0,50);
+            glVertex3f((float)i,0,-50);
+
+            glVertex3f(-50,0,(float)i);
+            glVertex3f(50,0,(float)i);
+        }
         glEnd();
 
+    glPopMatrix();
+
+}
+
+static void on_display(void){
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(0, 2, 3.7,
+              0, 0, 0,
+              0, 1, 0);
+
+    glPushMatrix();
+        draw_arena();
+    glPopMatrix();
+
+    glPushMatrix();
+        glTranslatef(poz,0,0);
+        draw_avion();
     glPopMatrix();
 
     glutSwapBuffers();
