@@ -2,11 +2,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define TIMER_INTERVAL 20
+#define TIMER_ID 0
+
+#define TIMER_INTERVAL2 20
+#define TIMER_ID2 0
 
 static void on_display(void);
 static void on_keyboard(unsigned char key, int x, int y);
+static void on_timer(int id);
+static void on_timer2(int id);
+
+float animation_ongoing = 0;
+float animation_parameter = 0;
+
+float animation_ongoing2 = 0;
+float animation_parameter2 = 0;
 
 float poz=0;
+float pozs=0;
 
 int main(int argc, char** argv){
 
@@ -50,21 +64,75 @@ void on_keyboard(unsigned char key, int x, int y) {
     switch(key) {
         case 'a':
             if(poz>-3){
-            poz -= 0.1;
-            glutPostRedisplay();
+                poz -= 0.1;
+                glutPostRedisplay();
             }
             break;
         case 'd':
             if(poz<3){
-            poz += 0.1;
-            glutPostRedisplay();
+                poz += 0.1;
+                glutPostRedisplay();
             }
             break;
+
+        case 's':
+            if(!animation_ongoing){
+                animation_ongoing=1;
+                glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
+            }else
+                animation_ongoing=0;
+
+            if(!animation_ongoing2){
+                animation_ongoing2=1;
+                glutTimerFunc(TIMER_INTERVAL2,on_timer2,TIMER_ID2);
+            }else
+                animation_ongoing2=0;
+            break;
+
         case 27:
           exit(0);
           break;
     }
 }
+//timer za pomeranje arene
+void on_timer(int id) {
+    if (id != TIMER_ID) {
+        return;
+    }
+
+    if(animation_parameter>=100){
+        animation_parameter=0;
+        glutPostRedisplay();
+
+    }
+    animation_parameter += 1;
+
+    glutPostRedisplay();
+
+    if(animation_ongoing){
+    glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
+    }
+}
+//timer za shoot
+void on_timer2(int id) {
+    if (id != TIMER_ID2) {
+        return;
+    }
+
+    if(animation_parameter2>=200){
+        animation_parameter2=0;
+        glutPostRedisplay();
+
+    }
+    animation_parameter2 += 1;
+
+    glutPostRedisplay();
+
+    if(animation_ongoing2){
+    glutTimerFunc(TIMER_INTERVAL2,on_timer2,TIMER_ID2);
+    }
+}
+
 //crtanje aviona
 void draw_avion(){
     glPushMatrix();
@@ -109,7 +177,24 @@ void draw_arena(){
         glEnd();
 
     glPopMatrix();
+}
+//shoot
+void draw_shot(){
+    glPushMatrix();
+        GLfloat ambient3[] = {0.25,0.35,0.79,0};
+        GLfloat diffuse3[] = {0.3,0.3,0.3,0};
+        GLfloat specular3[] = {0.6,0.6,0.6,0};
+        GLfloat shininess3 = 10;
 
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, ambient3);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, diffuse3);
+        glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular3);
+        glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess3);
+
+        glTranslatef(0,-0.15,2.19);
+        glutSolidSphere(0.03,5,5);
+
+    glPopMatrix();
 }
 
 static void on_display(void){
@@ -124,12 +209,21 @@ static void on_display(void){
               0, 1, 0);
 
     glPushMatrix();
+        glTranslatef(0,0,animation_parameter/10);
         draw_arena();
     glPopMatrix();
 
     glPushMatrix();
         glTranslatef(poz,0,0);
         draw_avion();
+    glPopMatrix();
+
+    if(animation_parameter2==1){
+        pozs = poz;
+    }
+    glPushMatrix();
+        glTranslatef(pozs,0,-animation_parameter2/15);
+        draw_shot();
     glPopMatrix();
 
     glutSwapBuffers();
