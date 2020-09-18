@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 #define TIMER_INTERVAL 20
 #define TIMER_ID 0
@@ -18,6 +19,13 @@ static void on_timer(int id);
 static void on_timer2(int id);
 static void on_timer3(int id);
 
+static void draw_avion(void);
+static void draw_arena(void);
+static void draw_shot(void);
+void draw_preke(float x[],float z[]);
+static void drawText(double x, double y, char *s);
+static void drawScore(void);
+
 float animation_ongoing = 0;
 float animation_parameter = 0;
 
@@ -32,6 +40,8 @@ float pozs=0;
 
 float x[301];
 float z[301];
+
+int score=0;
 
 int main(int argc, char** argv){
 
@@ -65,7 +75,7 @@ int main(int argc, char** argv){
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
 
     for(int i=0;i<300;i++)
-        z[i]=-21-i;
+        z[i]=-21-2*i;
 
     glutMainLoop();
 
@@ -107,6 +117,19 @@ void on_keyboard(unsigned char key, int x, int y) {
             }else
                 animation_ongoing3=0;
             break;
+
+        case 'r':
+            poz=0;
+            pozs=0;
+            score=0;
+            animation_ongoing=0;
+            animation_parameter=0;
+            animation_ongoing2=0;
+            animation_parameter2=0;
+            animation_ongoing3=0;
+            animation_parameter3=0;
+            glutPostRedisplay();
+        break;
 
         case 27:
           exit(0);
@@ -157,12 +180,13 @@ void on_timer3(int id) {
         return;
     }
 
-    if(animation_parameter3>=2000){
+    if(animation_parameter3>=8000){
         animation_parameter3=0;
         glutPostRedisplay();
 
     }
     animation_parameter3 += 1;
+    score+=1;
 
     glutPostRedisplay();
 
@@ -170,7 +194,6 @@ void on_timer3(int id) {
     glutTimerFunc(TIMER_INTERVAL3,on_timer3,TIMER_ID3);
     }
 }
-
 
 //crtanje aviona
 void draw_avion(){
@@ -217,7 +240,7 @@ void draw_arena(){
 
     glPopMatrix();
 }
-//shoot
+//crtanje shoot
 void draw_shot(){
     glPushMatrix();
         GLfloat ambient3[] = {1,0.08,0.19,0};
@@ -231,11 +254,12 @@ void draw_shot(){
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, shininess3);
 
         glTranslatef(0,-0.15,2.19);
+        glScalef(1,1,2);
         glutSolidSphere(0.03,5,5);
 
     glPopMatrix();
 }
-
+//crtanje prepreka
 void draw_preke(float x[],float z[]){
     GLfloat ambient3[] = {0.25,0.35,0.79,0};
     GLfloat diffuse3[] = {0.3,0.3,0.3,0};
@@ -255,10 +279,51 @@ void draw_preke(float x[],float z[]){
     }
 }
 
+static void drawText(double x, double y, char *s){
+    glRasterPos2d(x, y);
+
+    for (char* c=s; *c != '\0'; c++){
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
+    }
+}
+//ispisivanje score-a
+static void drawScore(void){
+    glPushMatrix();
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(0, 800.0, 800.0, 0, 0, 1);
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        glDisable(GL_LIGHTING);
+        glColor3f(1, 1, 1);
+
+        char score1[20];
+        sprintf(score1, "Score: %i", score);
+        drawText(700, 50, score1);
+
+        glEnable(GL_LIGHTING);
+
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluPerspective(80, 1.7, 0.5, 300);
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        gluLookAt(0, 2, 3.7,
+                  0, 0, 0,
+                  0, 1, 0);
+
+    glPopMatrix();
+}
+
+
 static void on_display(void){
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    drawScore();
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -278,6 +343,26 @@ static void on_display(void){
         draw_avion();
     glPopMatrix();
 
+    //pamti se poz sa shoot
+    if(animation_parameter2==1){
+        pozs = poz;
+    }
+    glPushMatrix();
+        glTranslatef(pozs,0,-animation_parameter2/15);
+        draw_shot();
+    glPopMatrix();
+
+    //ako se desi da se pogodi prepreka,uklanjamo je i povecawamo score
+    for(int i=0;i<300;i++){
+        if(fabs(pozs-x[i])<0.6 && fabs((z[i]+animation_parameter3/10.0f)+animation_parameter2/15.0f-2.19)<0.5){
+                x[i] = 50;
+                pozs = 50;
+                score+=100;
+                glutPostRedisplay();
+        }
+    }
+
+    //pravimo random mesta za prepreke
     glPushMatrix();
         glTranslatef(0,0,animation_parameter3/10);
         for(int i=0;i<300;i++){
@@ -287,13 +372,14 @@ static void on_display(void){
         draw_preke(x,z);
     glPopMatrix();
 
-    if(animation_parameter2==1){
-        pozs = poz;
+    //ako avion udari u prepreku zaustavljamo sve
+    for(int i=0;i<300;i++){
+        if(z[i]+animation_parameter3/10.0f>=2 && 2.1>=z[i]+animation_parameter3/10.0f && fabs(poz-x[i])<0.55){
+            animation_ongoing=0;
+            animation_ongoing2=0;
+            animation_ongoing3=0;
+        }
     }
-    glPushMatrix();
-        glTranslatef(pozs,0,-animation_parameter2/15);
-        draw_shot();
-    glPopMatrix();
 
     glutSwapBuffers();
 }
