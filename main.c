@@ -38,6 +38,8 @@ float animation_parameter3 = 0;
 float poz=0;
 float pozs=0;
 
+float stop = 1;
+
 float x[301];
 float z[301];
 
@@ -99,19 +101,19 @@ void on_keyboard(unsigned char key, int x, int y) {
             break;
 
         case 's':
-            if(!animation_ongoing){
+            if(!animation_ongoing && stop){
                 animation_ongoing=1;
                 glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
             }else
                 animation_ongoing=0;
 
-            if(!animation_ongoing2){
+            if(!animation_ongoing2 && stop){
                 animation_ongoing2=1;
                 glutTimerFunc(TIMER_INTERVAL2,on_timer2,TIMER_ID2);
             }else
                 animation_ongoing2=0;
 
-            if(!animation_ongoing3){
+            if(!animation_ongoing3 && stop){
                 animation_ongoing3=1;
                 glutTimerFunc(TIMER_INTERVAL3,on_timer3,TIMER_ID3);
             }else
@@ -122,6 +124,7 @@ void on_keyboard(unsigned char key, int x, int y) {
             poz=0;
             pozs=0;
             score=0;
+            stop = 1;
             animation_ongoing=0;
             animation_parameter=0;
             animation_ongoing2=0;
@@ -378,6 +381,7 @@ static void on_display(void){
             animation_ongoing=0;
             animation_ongoing2=0;
             animation_ongoing3=0;
+            stop = 0;
         }
     }
 
